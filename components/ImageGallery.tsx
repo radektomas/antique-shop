@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 
 interface Props {
@@ -11,20 +11,43 @@ interface Props {
 export default function ImageGallery({ images, alt }: Props) {
   const [active, setActive] = useState(0);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const touchStartX = useRef<number | null>(null);
 
   const openLightbox = (i: number) => setLightboxIndex(i);
   const closeLightbox = () => setLightboxIndex(null);
+  const goPrev = useCallback(() => setLightboxIndex(i => i === null ? null : (i - 1 + images.length) % images.length), [images.length]);
+  const goNext = useCallback(() => setLightboxIndex(i => i === null ? null : (i + 1) % images.length), [images.length]);
 
+  // Keyboard navigation
   useEffect(() => {
     if (lightboxIndex === null) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') closeLightbox();
-      else if (e.key === 'ArrowLeft') setLightboxIndex(i => i === null ? null : (i - 1 + images.length) % images.length);
-      else if (e.key === 'ArrowRight') setLightboxIndex(i => i === null ? null : (i + 1) % images.length);
+      else if (e.key === 'ArrowLeft') goPrev();
+      else if (e.key === 'ArrowRight') goNext();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [lightboxIndex, images.length]);
+  }, [lightboxIndex, goPrev, goNext]);
+
+  // Prevent body scroll while lightbox is open
+  useEffect(() => {
+    document.body.style.overflow = lightboxIndex !== null ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [lightboxIndex]);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return;
+    const delta = e.changedTouches[0].clientX - touchStartX.current;
+    if (Math.abs(delta) > 50) {
+      if (delta < 0) goNext(); else goPrev();
+    }
+    touchStartX.current = null;
+  };
 
   if (!images || images.length === 0) {
     return (
@@ -39,8 +62,15 @@ export default function ImageGallery({ images, alt }: Props) {
   return (
     <>
       <div className="space-y-3">
-        {/* Main image */}
-        <div className="group relative aspect-[4/3] bg-brown-100 rounded-lg overflow-hidden">
+        {/* Main image — fully clickable */}
+        <div
+          className="group relative aspect-[4/3] bg-brown-100 rounded-lg overflow-hidden cursor-zoom-in"
+          onClick={() => openLightbox(active)}
+          role="button"
+          tabIndex={0}
+          aria-label="Zobrazit fotografii"
+          onKeyDown={(e) => e.key === 'Enter' && openLightbox(active)}
+        >
           <Image
             src={images[active]}
             alt={alt}
@@ -49,12 +79,10 @@ export default function ImageGallery({ images, alt }: Props) {
             sizes="(max-width: 768px) 100vw, 50vw"
             priority
           />
-          <button
-            onClick={() => openLightbox(active)}
-            className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-white/90 hover:bg-white text-brown-900 text-xs font-medium px-3 py-1.5 rounded-full shadow opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-          >
+          {/* Desktop hint — hidden on touch devices via hover */}
+          <div className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-white/90 text-brown-900 text-xs font-medium px-3 py-1.5 rounded-full shadow opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
             🔍 Zvětšit
-          </button>
+          </div>
         </div>
 
         {/* Thumbnails */}
@@ -84,6 +112,8 @@ export default function ImageGallery({ images, alt }: Props) {
       {/* Lightbox */}
       {lightboxIndex !== null && (
         <div
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
           onClick={closeLightbox}
           style={{
             position: 'fixed',
@@ -91,7 +121,7 @@ export default function ImageGallery({ images, alt }: Props) {
             left: 0,
             width: '100vw',
             height: '100vh',
-            backgroundColor: 'rgba(0,0,0,0.9)',
+            backgroundColor: 'rgba(0,0,0,0.92)',
             zIndex: 9999,
             display: 'flex',
             alignItems: 'center',
@@ -104,28 +134,34 @@ export default function ImageGallery({ images, alt }: Props) {
             aria-label="Zavřít"
             style={{
               position: 'absolute',
-              top: '20px',
-              right: '20px',
+              top: '16px',
+              right: '16px',
               zIndex: 10000,
-              background: 'none',
+              background: 'rgba(0,0,0,0.4)',
               border: 'none',
               color: 'white',
-              fontSize: '2rem',
+              fontSize: '1.5rem',
               cursor: 'pointer',
               lineHeight: 1,
+              width: '44px',
+              height: '44px',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
           >
             ×
           </button>
 
-          {/* Prev */}
+          {/* Prev — hidden on mobile (swipe instead) */}
           {images.length > 1 && (
             <button
-              onClick={(e) => { e.stopPropagation(); setLightboxIndex((i) => i === null ? null : (i - 1 + images.length) % images.length); }}
+              onClick={(e) => { e.stopPropagation(); goPrev(); }}
               aria-label="Předchozí"
               style={{
                 position: 'absolute',
-                left: '20px',
+                left: '16px',
                 zIndex: 10000,
                 background: 'rgba(255,255,255,0.15)',
                 border: 'none',
@@ -144,27 +180,29 @@ export default function ImageGallery({ images, alt }: Props) {
             </button>
           )}
 
-          {/* Image */}
+          {/* Image — stopPropagation so clicking image itself doesn't close */}
           <img
             src={images[lightboxIndex]}
             alt={`${alt} ${lightboxIndex + 1}`}
             onClick={(e) => e.stopPropagation()}
+            draggable={false}
             style={{
               maxWidth: '90vw',
               maxHeight: '90vh',
               objectFit: 'contain',
               display: 'block',
+              userSelect: 'none',
             }}
           />
 
-          {/* Next */}
+          {/* Next — hidden on mobile (swipe instead) */}
           {images.length > 1 && (
             <button
-              onClick={(e) => { e.stopPropagation(); setLightboxIndex((i) => i === null ? null : (i + 1) % images.length); }}
+              onClick={(e) => { e.stopPropagation(); goNext(); }}
               aria-label="Další"
               style={{
                 position: 'absolute',
-                right: '20px',
+                right: '16px',
                 zIndex: 10000,
                 background: 'rgba(255,255,255,0.15)',
                 border: 'none',
@@ -181,6 +219,39 @@ export default function ImageGallery({ images, alt }: Props) {
             >
               ›
             </button>
+          )}
+
+          {/* Dot indicators */}
+          {images.length > 1 && (
+            <div
+              style={{
+                position: 'absolute',
+                bottom: '20px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                display: 'flex',
+                gap: '8px',
+                zIndex: 10000,
+              }}
+            >
+              {images.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={(e) => { e.stopPropagation(); setLightboxIndex(i); }}
+                  aria-label={`Fotografie ${i + 1}`}
+                  style={{
+                    width: i === lightboxIndex ? '20px' : '8px',
+                    height: '8px',
+                    borderRadius: '4px',
+                    background: i === lightboxIndex ? 'white' : 'rgba(255,255,255,0.4)',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: 0,
+                    transition: 'width 0.2s, background 0.2s',
+                  }}
+                />
+              ))}
+            </div>
           )}
         </div>
       )}
