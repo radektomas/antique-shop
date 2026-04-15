@@ -16,7 +16,7 @@ export default function Navbar() {
           href="/"
           className="font-serif text-2xl text-brown-900 tracking-wide hover:text-gold transition-colors"
         >
-          Výprodej starožitností
+          Orientální dekorace
         </Link>
 
         {/* Desktop nav */}

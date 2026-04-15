@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const product = await getProduct(id);
   if (!product) return {};
   return {
-    title: `${product.name} | Výprodej starožitností`,
+    title: `${product.name} | Orientální dekorace`,
     description: product.description,
   };
 }

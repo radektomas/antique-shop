@@ -17,7 +17,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'Výprodej starožitností | Výběrový antikvariát',
+  title: 'Orientální dekorace | Výběrový antikvariát',
   description:
     'Výběrový antikvariát s jedinečnými kusy nábytku, keramiky, obrazů a dalšího.',
 };
@@ -35,7 +35,7 @@ export default function RootLayout({
           <main>{children}</main>
           <footer className="border-t border-brown-200 bg-brown-900 text-brown-200 py-10 mt-20">
             <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row justify-between items-center gap-4 text-sm">
-              <p className="font-serif text-lg text-cream">Výprodej starožitností</p>
+              <p className="font-serif text-lg text-cream">Orientální dekorace</p>
               <p className="text-brown-300">
                 &copy; {new Date().getFullYear()} Výběrový antikvariát. Všechna práva
                 vyhrazena.

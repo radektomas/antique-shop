@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
         <p><strong>Celkem: ${Number(total_price).toLocaleString('cs-CZ')} Kč</strong></p>
         ${note ? `<p><strong>Poznámka:</strong> ${note}</p>` : ''}
         <hr style="border-color: #E8D5C0; margin: 20px 0;" />
-        <p style="color: #8B5E3C; font-size: 14px;">Výprodej starožitností — Výběrový antikvariát</p>
+        <p style="color: #8B5E3C; font-size: 14px;">Orientální dekorace — Výběrový antikvariát</p>
       </div>
     `;
 
@@ -72,13 +72,13 @@ export async function POST(req: NextRequest) {
     const resend = new Resend(process.env.RESEND_API_KEY);
     await Promise.allSettled([
       resend.emails.send({
-        from: 'Výprodej starožitností <objednavky@resend.dev>',
+        from: 'Orientální dekorace <objednavky@resend.dev>',
         to: customer_email,
-        subject: 'Potvrzení vaší objednávky — Výprodej starožitností',
+        subject: 'Potvrzení vaší objednávky — Orientální dekorace',
         html: emailBody,
       }),
       resend.emails.send({
-        from: 'Výprodej starožitností <objednavky@resend.dev>',
+        from: 'Orientální dekorace <objednavky@resend.dev>',
         to: process.env.OWNER_EMAIL!,
         subject: `Nová objednávka od ${customer_name}`,
         html: ownerBody,

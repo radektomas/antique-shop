@@ -30,11 +30,10 @@ export interface Order {
 }
 
 export const CATEGORIES = [
-  'nábytek',
-  'keramika',
-  'obrazy',
-  'hodiny',
-  'ostatní',
+  'Buddhové & Božstva',
+  'Šperky & Doplňky',
+  'Nádobí & Porcelán',
+  'Ostatní',
 ] as const;
 
 export type Category = (typeof CATEGORIES)[number];

@@ -1,6 +1,6 @@
 import Link from 'next/link';
 
-export const metadata = { title: 'Děkujeme za objednávku | Výprodej starožitností' };
+export const metadata = { title: 'Děkujeme za objednávku | Orientální dekorace' };
 
 export default function DekujemePage() {
   const ownerPhone = process.env.OWNER_PHONE;

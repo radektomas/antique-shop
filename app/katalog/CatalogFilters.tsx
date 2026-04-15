@@ -1,71 +1,71 @@
 'use client';
 
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import { CATEGORIES } from '@/lib/types';
+
+const PRICE_RANGES = [
+  { label: 'Všechny ceny', key: null },
+  { label: 'Do 500 Kč', key: 'do-500' },
+  { label: '500 – 2 000 Kč', key: '500-2000' },
+  { label: '2 000+ Kč', key: '2000' },
+] as const;
 
 interface Props {
-  categories: string[];
   activeCategory?: string;
-  showSold: boolean;
+  activePrice?: string;
 }
 
-export default function CatalogFilters({ categories, activeCategory, showSold }: Props) {
+export default function CatalogFilters({ activeCategory, activePrice }: Props) {
   const router = useRouter();
-  const searchParams = useSearchParams();
 
-  const update = useCallback(
-    (key: string, value: string | null) => {
-      const params = new URLSearchParams(searchParams.toString());
-      if (value) {
-        params.set(key, value);
-      } else {
-        params.delete(key);
-      }
-      router.push(`/katalog?${params.toString()}`);
-    },
-    [router, searchParams]
-  );
+  function buildUrl(kategorie: string | null, cena: string | null) {
+    const params = new URLSearchParams();
+    if (kategorie) params.set('kategorie', kategorie);
+    if (cena) params.set('cena', cena);
+    const qs = params.toString();
+    return qs ? `/katalog?${qs}` : '/katalog';
+  }
+
+  const pillBase = 'px-4 py-1.5 rounded-full text-sm font-medium border transition-colors whitespace-nowrap';
+  const pillActive = 'bg-gold border-gold text-white';
+  const pillInactive = 'border-brown-600 text-brown-300 hover:border-gold hover:text-gold';
 
   return (
-    <div className="flex flex-col sm:flex-row gap-4 mb-8">
+    <div className="flex flex-col gap-4 mb-6">
       {/* Category filter */}
       <div className="flex flex-wrap gap-2">
         <button
-          onClick={() => update('kategorie', null)}
-          className={`px-4 py-1.5 text-sm font-medium border transition-colors capitalize tracking-wide ${
-            !activeCategory
-              ? 'bg-brown-900 text-cream border-brown-900'
-              : 'border-brown-300 text-brown-700 hover:border-brown-900'
-          }`}
+          onClick={() => router.push(buildUrl(null, activePrice ?? null))}
+          className={`${pillBase} ${!activeCategory ? pillActive : pillInactive}`}
         >
           Vše
         </button>
-        {categories.map((cat) => (
+        {CATEGORIES.map((cat) => (
           <button
             key={cat}
-            onClick={() => update('kategorie', cat === activeCategory ? null : cat)}
-            className={`px-4 py-1.5 text-sm font-medium border transition-colors capitalize tracking-wide ${
-              activeCategory === cat
-                ? 'bg-brown-900 text-cream border-brown-900'
-                : 'border-brown-300 text-brown-700 hover:border-brown-900'
-            }`}
+            onClick={() =>
+              router.push(buildUrl(activeCategory === cat ? null : cat, activePrice ?? null))
+            }
+            className={`${pillBase} ${activeCategory === cat ? pillActive : pillInactive}`}
           >
             {cat}
           </button>
         ))}
       </div>
 
-      {/* Sold toggle */}
-      <div className="sm:ml-auto">
-        <label className="flex items-center gap-2 cursor-pointer text-sm text-brown-700 select-none">
-          <input
-            type="checkbox"
-            checked={showSold}
-            onChange={(e) => update('dostupnost', e.target.checked ? 'vse' : null)}
-            className="accent-gold w-4 h-4"
-          />
-          Zobrazit prodané
-        </label>
+      {/* Price filter */}
+      <div className="flex flex-wrap gap-2">
+        {PRICE_RANGES.map(({ label, key }) => (
+          <button
+            key={label}
+            onClick={() =>
+              router.push(buildUrl(activeCategory ?? null, (activePrice ?? null) === key ? null : key))
+            }
+            className={`${pillBase} ${(activePrice ?? null) === key ? pillActive : pillInactive}`}
+          >
+            {label}
+          </button>
+        ))}
       </div>
     </div>
   );
