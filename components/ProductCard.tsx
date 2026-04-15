@@ -26,7 +26,25 @@ export default function ProductCard({ product }: Props) {
         className="hover:shadow-xl"
       >
         {/* Image — fixed 300px, never shrinks or grows */}
-        <div style={{ flexShrink: 0, height: '300px', overflow: 'hidden', backgroundColor: '#f5ede4' }}>
+        <div style={{ flexShrink: 0, height: '300px', overflow: 'hidden', backgroundColor: '#f5ede4', position: 'relative' }}>
+          {product.sold && (
+            <span style={{
+              position: 'absolute',
+              top: '12px',
+              left: '12px',
+              zIndex: 1,
+              backgroundColor: '#3b2a1a',
+              color: '#f5ede4',
+              fontSize: '0.75rem',
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              padding: '4px 10px',
+              borderRadius: '4px',
+            }}>
+              Prodáno
+            </span>
+          )}
           {image ? (
             <img
               src={image}
