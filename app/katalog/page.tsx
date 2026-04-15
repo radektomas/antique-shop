@@ -47,7 +47,7 @@ export default async function KatalogPage({
 
         <CatalogFilters activeCategory={kategorie} activePrice={cena} />
 
-        <p className="text-sm text-brown-400 mb-6">
+        <p className="text-sm text-brown-200 mb-6">
           Zobrazeno {filtered.length} {filtered.length === 1 ? 'produkt' : filtered.length >= 2 && filtered.length <= 4 ? 'produkty' : 'produktů'}
         </p>
 
