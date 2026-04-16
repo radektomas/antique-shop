@@ -44,6 +44,7 @@ export default function RootLayout({
             </div>
           </footer>
         </CartProvider>
+        <Analytics />
       </body>
     </html>
   );
