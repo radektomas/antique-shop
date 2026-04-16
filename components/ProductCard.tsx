@@ -27,6 +27,24 @@ export default function ProductCard({ product }: Props) {
       >
         {/* Image — fixed 300px, never shrinks or grows */}
         <div style={{ flexShrink: 0, height: '300px', overflow: 'hidden', backgroundColor: '#f5ede4', position: 'relative' }}>
+          {product.is_new && !product.sold && (
+            <span style={{
+              position: 'absolute',
+              top: '12px',
+              right: '12px',
+              zIndex: 10,
+              backgroundColor: '#c9932a',
+              color: '#ffffff',
+              fontSize: '0.75rem',
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              padding: '4px 10px',
+              borderRadius: '4px',
+            }}>
+              Nově přidáno
+            </span>
+          )}
           {product.sold && (
             <span style={{
               position: 'absolute',
