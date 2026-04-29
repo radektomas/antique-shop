@@ -18,9 +18,10 @@ async function getProducts(): Promise<Product[]> {
 export default async function KatalogPage({
   searchParams,
 }: {
-  searchParams: Promise<{ kategorie?: string; cena?: string }>;
+  searchParams: Promise<{ kategorie?: string; cena?: string; vyprodej?: string }>;
 }) {
-  const { kategorie, cena } = await searchParams;
+  const { kategorie, cena, vyprodej } = await searchParams;
+  const showOnlySale = vyprodej === '1';
   const products = await getProducts();
 
   let filtered = products;
@@ -37,6 +38,10 @@ export default async function KatalogPage({
     filtered = filtered.filter((p) => p.price > 2000);
   }
 
+  if (showOnlySale) {
+    filtered = filtered.filter((p) => p.is_sale === true);
+  }
+
   return (
     <div className="min-h-screen bg-[#1a1410]">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12">
@@ -45,7 +50,7 @@ export default async function KatalogPage({
           <div className="mt-3 w-12 h-px bg-gold" />
         </div>
 
-        <CatalogFilters activeCategory={kategorie} activePrice={cena} />
+        <CatalogFilters activeCategory={kategorie} activePrice={cena} activeSale={showOnlySale} />
 
         <p className="text-sm text-brown-200 mb-6">
           Zobrazeno {filtered.length} {filtered.length === 1 ? 'produkt' : filtered.length >= 2 && filtered.length <= 4 ? 'produkty' : 'produktů'}

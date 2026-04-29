@@ -30,15 +30,29 @@ export async function POST(req: NextRequest) {
   if (auth) return auth;
 
   const body = await req.json();
-  const { name, description, price, category, images } = body;
+  const { name, description, price, sale_price, category, images, is_sale } = body;
 
   if (!name || !price || !category) {
     return NextResponse.json({ error: 'Chybí povinné pole' }, { status: 400 });
   }
 
+  const onSale = !!is_sale;
+  const normalizedSalePrice =
+    onSale && sale_price != null && Number(sale_price) < Number(price)
+      ? Number(sale_price)
+      : null;
+
   const { data, error } = await getSupabaseAdmin()
     .from('products')
-    .insert({ name, description, price, category, images: images ?? [] })
+    .insert({
+      name,
+      description,
+      price,
+      sale_price: normalizedSalePrice,
+      category,
+      images: images ?? [],
+      is_sale: onSale,
+    })
     .select()
     .single();
 

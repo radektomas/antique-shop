@@ -1,6 +1,7 @@
 'use client';
 
 import { useCart } from '@/components/CartContext';
+import { formatCZK } from '@/lib/pricing';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -65,7 +66,7 @@ export default function KosikPage() {
                     {item.name}
                   </Link>
                   <p className="font-serif text-lg font-semibold text-brown-900 mt-1">
-                    {item.price.toLocaleString('cs-CZ')} Kč
+                    {formatCZK(item.price)}
                   </p>
                 </div>
                 <button
@@ -88,13 +89,13 @@ export default function KosikPage() {
               {items.map((item) => (
                 <div key={item.product_id} className="flex justify-between text-sm text-brown-700">
                   <span className="truncate pr-2">{item.name}</span>
-                  <span className="flex-none">{item.price.toLocaleString('cs-CZ')} Kč</span>
+                  <span className="flex-none">{formatCZK(item.price)}</span>
                 </div>
               ))}
             </div>
             <div className="border-t border-brown-200 mt-4 pt-4 flex justify-between font-serif text-lg font-semibold text-brown-900">
               <span>Celkem</span>
-              <span>{total.toLocaleString('cs-CZ')} Kč</span>
+              <span>{formatCZK(total)}</span>
             </div>
             <p className="text-xs text-brown-400 mt-2">+ doprava dle dohody</p>
             <Link

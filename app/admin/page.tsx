@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import type { Product, Order } from '@/lib/types';
 import { CATEGORIES } from '@/lib/types';
+import { formatCZK } from '@/lib/pricing';
 
 type Tab = 'produkty' | 'objednavky';
 
@@ -169,7 +170,14 @@ export default function AdminPage() {
                       </td>
                       <td className="py-3 pr-4 text-brown-500 capitalize">{p.category}</td>
                       <td className="py-3 pr-4 text-right text-brown-900">
-                        {p.price.toLocaleString('cs-CZ')} Kč
+                        {p.is_sale && p.sale_price != null && p.sale_price < p.price ? (
+                          <span>
+                            <span className="text-brown-400 line-through mr-2">{formatCZK(p.price)}</span>
+                            <span className="text-red-600 font-semibold">{formatCZK(p.sale_price)}</span>
+                          </span>
+                        ) : (
+                          formatCZK(p.price)
+                        )}
                       </td>
                       <td className="py-3 pr-4 text-center">
                         <button
@@ -225,12 +233,12 @@ export default function AdminPage() {
                     <div className="mt-2 space-y-0.5">
                       {(order.items as Array<{ name: string; price: number }>).map((item, i) => (
                         <p key={i} className="text-sm text-brown-700">
-                          {item.name} — {item.price.toLocaleString('cs-CZ')} Kč
+                          {item.name} — {formatCZK(item.price)}
                         </p>
                       ))}
                     </div>
                     <p className="font-serif text-base font-semibold text-brown-900 mt-2">
-                      Celkem: {Number(order.total_price).toLocaleString('cs-CZ')} Kč
+                      Celkem: {formatCZK(Number(order.total_price))}
                     </p>
                     <p className="text-xs text-brown-400 mt-1">
                       {new Date(order.created_at).toLocaleString('cs-CZ')}
@@ -288,8 +296,10 @@ function ProductForm({ product, onSaved, onCancel }: ProductFormProps) {
     name: product?.name ?? '',
     description: product?.description ?? '',
     price: product?.price?.toString() ?? '',
+    sale_price: product?.sale_price != null ? product.sale_price.toString() : '',
     category: product?.category ?? CATEGORIES[0],
     images: product?.images ?? [] as string[],
+    is_sale: product?.is_sale ?? false,
   });
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -322,11 +332,33 @@ function ProductForm({ product, onSaved, onCancel }: ProductFormProps) {
   const removeImage = (idx: number) =>
     setForm((f) => ({ ...f, images: f.images.filter((_, i) => i !== idx) }));
 
+  const priceNum = parseFloat(form.price);
+  const salePriceNum = form.sale_price === '' ? null : parseFloat(form.sale_price);
+  const salePriceInvalid =
+    form.is_sale &&
+    (salePriceNum == null ||
+      Number.isNaN(salePriceNum) ||
+      Number.isNaN(priceNum) ||
+      salePriceNum >= priceNum ||
+      salePriceNum <= 0);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (salePriceInvalid) {
+      setError('Výprodejová cena musí být kladná a nižší než běžná cena.');
+      return;
+    }
     setSaving(true);
     setError('');
-    const payload = { ...form, price: parseFloat(form.price) };
+    const payload = {
+      name: form.name,
+      description: form.description,
+      category: form.category,
+      images: form.images,
+      is_sale: form.is_sale,
+      price: priceNum,
+      sale_price: form.is_sale && salePriceNum != null ? salePriceNum : null,
+    };
 
     const url = isNew ? '/api/products' : `/api/products/${product!.id}`;
     const method = isNew ? 'POST' : 'PUT';
@@ -401,6 +433,45 @@ function ProductForm({ product, onSaved, onCancel }: ProductFormProps) {
           />
         </Field>
 
+        <div className="space-y-3">
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={form.is_sale}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  is_sale: e.target.checked,
+                  sale_price: e.target.checked ? f.sale_price : '',
+                }))
+              }
+              className="w-4 h-4 accent-red-600"
+            />
+            <span className="text-sm text-brown-700">Ve výprodeji</span>
+          </label>
+
+          {form.is_sale && (
+            <Field label="Výprodejová cena (Kč) *">
+              <input
+                name="sale_price"
+                type="number"
+                min={0}
+                step="0.01"
+                value={form.sale_price}
+                onChange={handleChange}
+                className={inp}
+                placeholder="0"
+                required
+              />
+              {salePriceInvalid && (
+                <p className="text-xs text-red-600 mt-1">
+                  Výprodejová cena musí být kladná a nižší než běžná cena ({form.price || '0'} Kč).
+                </p>
+              )}
+            </Field>
+          )}
+        </div>
+
         {/* Image upload */}
         <Field label="Fotografie">
           <div className="space-y-3">
@@ -440,7 +511,7 @@ function ProductForm({ product, onSaved, onCancel }: ProductFormProps) {
         <div className="flex gap-3 pt-2">
           <button
             type="submit"
-            disabled={saving || uploading}
+            disabled={saving || uploading || salePriceInvalid}
             className="bg-brown-900 hover:bg-charcoal disabled:opacity-60 text-cream font-medium tracking-wide text-sm px-6 py-2.5 transition-colors"
           >
             {saving ? 'Ukládám...' : isNew ? 'Přidat' : 'Uložit'}

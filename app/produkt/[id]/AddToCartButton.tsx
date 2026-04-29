@@ -2,6 +2,7 @@
 
 import { useCart } from '@/components/CartContext';
 import type { Product } from '@/lib/types';
+import { getDisplayPrice } from '@/lib/pricing';
 import { useState } from 'react';
 import Link from 'next/link';
 
@@ -11,10 +12,11 @@ export default function AddToCartButton({ product }: { product: Product }) {
   const inCart = items.some((i) => i.product_id === product.id);
 
   const handleAdd = () => {
+    const { current } = getDisplayPrice(product);
     addItem({
       product_id: product.id,
       name: product.name,
-      price: product.price,
+      price: current,
       image: product.images?.[0] ?? null,
     });
     setAdded(true);

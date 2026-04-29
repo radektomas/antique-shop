@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { Product } from '@/lib/types';
+import { getDisplayPrice, formatCZK } from '@/lib/pricing';
 
 interface Props {
   product: Product;
@@ -7,6 +8,7 @@ interface Props {
 
 export default function ProductCard({ product }: Props) {
   const image = product.images?.[0];
+  const { isOnSale, current, original } = getDisplayPrice(product);
 
   return (
     <Link href={`/produkt/${product.id}`} className="group" style={{ display: 'flex', height: '100%' }}>
@@ -27,7 +29,29 @@ export default function ProductCard({ product }: Props) {
       >
         {/* Image — fixed 300px, never shrinks or grows */}
         <div style={{ flexShrink: 0, height: '300px', overflow: 'hidden', backgroundColor: '#f5ede4', position: 'relative' }}>
-          {product.is_new && !product.sold && (
+          {product.is_sale && !product.sold && (
+            <span
+              className="pointer-events-none"
+              style={{
+                position: 'absolute',
+                top: '12px',
+                right: '12px',
+                zIndex: 10,
+                backgroundColor: '#dc2626',
+                color: '#ffffff',
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                padding: '4px 10px',
+                borderRadius: '4px',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+              }}
+            >
+              Výprodej
+            </span>
+          )}
+          {product.is_new && !product.sold && !product.is_sale && (
             <span style={{
               position: 'absolute',
               top: '12px',
@@ -90,7 +114,16 @@ export default function ProductCard({ product }: Props) {
             {product.name}
           </h3>
           <p className="font-serif" style={{ fontSize: '1.125rem', fontWeight: 600, color: product.sold ? '#a08060' : '#3b2a1a' }}>
-            {product.sold ? 'Prodáno' : `${product.price.toLocaleString('cs-CZ')} Kč`}
+            {product.sold ? (
+              'Prodáno'
+            ) : isOnSale ? (
+              <>
+                <span className="text-gray-400 line-through text-sm mr-2">{formatCZK(original!)}</span>
+                <span className="text-red-600 font-bold">{formatCZK(current)}</span>
+              </>
+            ) : (
+              formatCZK(current)
+            )}
           </p>
         </div>
       </div>

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
+import { formatCZK } from '@/lib/pricing';
 import { Resend } from 'resend';
 
 export async function POST(req: NextRequest) {
@@ -37,7 +38,7 @@ export async function POST(req: NextRequest) {
 
     // Build email body
     const itemsList = items
-      .map((i: { name: string; price: number }) => `<li>${i.name} — ${i.price.toLocaleString('cs-CZ')} Kč</li>`)
+      .map((i: { name: string; price: number }) => `<li>${i.name} — ${formatCZK(i.price)}</li>`)
       .join('');
 
     const emailBody = `
@@ -47,7 +48,7 @@ export async function POST(req: NextRequest) {
         <p>Děkujeme za Vaši objednávku. Brzy Vás kontaktujeme na zadaný telefon pro domluvení osobního předání.</p>
         <h3>Objednané předměty:</h3>
         <ul>${itemsList}</ul>
-        <p><strong>Celkem: ${Number(total_price).toLocaleString('cs-CZ')} Kč</strong></p>
+        <p><strong>Celkem: ${formatCZK(Number(total_price))}</strong></p>
         ${note ? `<p><strong>Poznámka:</strong> ${note}</p>` : ''}
         <hr style="border-color: #E8D5C0; margin: 20px 0;" />
         <p style="color: #8B5E3C; font-size: 14px;">Orientální dekorace — Výběrový antikvariát</p>
@@ -64,7 +65,7 @@ export async function POST(req: NextRequest) {
         ${note ? `<p><strong>Poznámka:</strong> ${note}</p>` : ''}
         <h3>Položky:</h3>
         <ul>${itemsList}</ul>
-        <p><strong>Celkem: ${Number(total_price).toLocaleString('cs-CZ')} Kč</strong></p>
+        <p><strong>Celkem: ${formatCZK(Number(total_price))}</strong></p>
       </div>
     `;
 

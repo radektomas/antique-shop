@@ -9,10 +9,13 @@ CREATE TABLE IF NOT EXISTS products (
   name        TEXT        NOT NULL,
   description TEXT,
   price       NUMERIC     NOT NULL,
+  sale_price  NUMERIC(10, 2),
   category    TEXT        NOT NULL,
   images      TEXT[]      DEFAULT '{}',
   sold        BOOLEAN     DEFAULT FALSE,
-  created_at  TIMESTAMPTZ DEFAULT NOW()
+  is_sale     BOOLEAN     NOT NULL DEFAULT FALSE,
+  created_at  TIMESTAMPTZ DEFAULT NOW(),
+  CONSTRAINT  sale_price_lower_than_price CHECK (sale_price IS NULL OR sale_price < price)
 );
 
 -- Orders table

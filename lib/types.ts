@@ -3,10 +3,12 @@ export interface Product {
   name: string;
   description: string;
   price: number;
+  sale_price?: number | null;
   category: string;
   images: string[];
   sold: boolean;
   is_new?: boolean;
+  is_sale?: boolean;
   created_at: string;
 }
 

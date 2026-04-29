@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { getSupabase } from '@/lib/supabase';
 import type { Product } from '@/lib/types';
+import { getDisplayPrice, formatCZK } from '@/lib/pricing';
 import ImageGallery from '@/components/ImageGallery';
 import AddToCartButton from './AddToCartButton';
 
@@ -34,6 +35,8 @@ export default async function ProduktPage({
   const product = await getProduct(id);
   if (!product) notFound();
 
+  const { isOnSale, current, original, discountPercent } = getDisplayPrice(product);
+
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-10 lg:gap-16">
@@ -53,11 +56,19 @@ export default async function ProduktPage({
           </h1>
 
           {/* Price */}
-          <p className="font-serif text-2xl font-semibold text-brown-900">
+          <p className="font-serif font-semibold text-brown-900 flex items-baseline flex-wrap gap-x-1">
             {product.sold ? (
-              <span className="text-brown-500">Prodáno</span>
+              <span className="text-2xl text-brown-500">Prodáno</span>
+            ) : isOnSale ? (
+              <>
+                <span className="text-gray-400 line-through text-lg mr-3">{formatCZK(original!)}</span>
+                <span className="text-red-600 text-3xl font-bold">{formatCZK(current)}</span>
+                <span className="bg-red-600 text-white text-xs font-semibold px-2 py-0.5 rounded ml-2">
+                  −{discountPercent} %
+                </span>
+              </>
             ) : (
-              `${product.price.toLocaleString('cs-CZ')} Kč`
+              <span className="text-2xl">{formatCZK(current)}</span>
             )}
           </p>
 
