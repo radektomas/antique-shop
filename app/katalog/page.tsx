@@ -1,9 +1,14 @@
+import { Suspense } from 'react';
+import { redirect } from 'next/navigation';
 import { getSupabase } from '@/lib/supabase';
 import type { Product } from '@/lib/types';
 import ProductCard from '@/components/ProductCard';
 import CatalogFilters from './CatalogFilters';
+import PaginationControls from './PaginationControls';
 
 export const dynamic = 'force-dynamic';
+
+const PAGE_SIZE = 30;
 
 async function getProducts(): Promise<Product[]> {
   const { data, error } = await getSupabase()
@@ -18,9 +23,9 @@ async function getProducts(): Promise<Product[]> {
 export default async function KatalogPage({
   searchParams,
 }: {
-  searchParams: Promise<{ kategorie?: string; cena?: string; vyprodej?: string }>;
+  searchParams: Promise<{ kategorie?: string; cena?: string; vyprodej?: string; page?: string }>;
 }) {
-  const { kategorie, cena, vyprodej } = await searchParams;
+  const { kategorie, cena, vyprodej, page } = await searchParams;
   const showOnlySale = vyprodej === '1';
   const products = await getProducts();
 
@@ -42,6 +47,32 @@ export default async function KatalogPage({
     filtered = filtered.filter((p) => p.is_sale === true);
   }
 
+  const totalCount = filtered.length;
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  const requestedPage = Number.parseInt(page ?? '1', 10);
+  const currentPage = Number.isNaN(requestedPage) || requestedPage < 1 ? 1 : requestedPage;
+
+  if (totalCount > 0 && currentPage > totalPages) {
+    const params = new URLSearchParams();
+    if (kategorie) params.set('kategorie', kategorie);
+    if (cena) params.set('cena', cena);
+    if (vyprodej) params.set('vyprodej', '1');
+    if (totalPages > 1) params.set('page', String(totalPages));
+    const qs = params.toString();
+    redirect(qs ? `/katalog?${qs}` : '/katalog');
+  }
+
+  const startIdx = (currentPage - 1) * PAGE_SIZE;
+  const endIdx = Math.min(startIdx + PAGE_SIZE, totalCount);
+  const pageItems = filtered.slice(startIdx, endIdx);
+
+  const productLabel =
+    totalCount === 1 ? 'produkt' : totalCount >= 2 && totalCount <= 4 ? 'produkty' : 'produktů';
+  const countText =
+    totalCount === 0
+      ? `Zobrazeno 0 ${productLabel}`
+      : `Zobrazeno ${startIdx + 1}–${endIdx} z ${totalCount} ${productLabel}`;
+
   return (
     <div className="min-h-screen bg-[#1a1410]">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12">
@@ -52,20 +83,29 @@ export default async function KatalogPage({
 
         <CatalogFilters activeCategory={kategorie} activePrice={cena} activeSale={showOnlySale} />
 
-        <p className="text-sm text-brown-200 mb-6">
-          Zobrazeno {filtered.length} {filtered.length === 1 ? 'produkt' : filtered.length >= 2 && filtered.length <= 4 ? 'produkty' : 'produktů'}
-        </p>
+        <p className="text-sm text-brown-200 mb-6">{countText}</p>
 
-        {filtered.length === 0 ? (
+        {totalCount === 0 ? (
           <div className="text-center py-20">
             <p className="text-lg text-brown-300">Žádné produkty neodpovídají zvoleným filtrům.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" style={{ alignItems: 'stretch' }}>
-            {filtered.map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
-          </div>
+          <>
+            <div
+              id="product-grid"
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 scroll-mt-6"
+              style={{ alignItems: 'stretch' }}
+            >
+              {pageItems.map((p) => (
+                <ProductCard key={p.id} product={p} />
+              ))}
+            </div>
+            {totalPages > 1 && (
+              <Suspense fallback={null}>
+                <PaginationControls currentPage={currentPage} totalPages={totalPages} />
+              </Suspense>
+            )}
+          </>
         )}
       </div>
     </div>
